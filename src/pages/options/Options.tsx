@@ -20,9 +20,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 text-zinc-50">
-      <Card className="w-full max-w-sm border-zinc-800 bg-zinc-900 shadow-2xl">
-        <CardHeader>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 p-4 text-zinc-50">
+      <Card className="w-full max-w-sm border-0 sm:border sm:border-zinc-800 bg-zinc-950 sm:bg-zinc-900 shadow-none sm:shadow-2xl">
+        <CardHeader className="pt-8 sm:pt-6">
           <CardTitle className="text-center text-xl font-bold tracking-widest text-zinc-100">
             LOGIN PAGE
           </CardTitle>
@@ -40,7 +40,7 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="aboba"
-                className="border-zinc-700 bg-zinc-950 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-zinc-500"
+                className="border-zinc-800 sm:border-zinc-700 bg-zinc-900 sm:bg-zinc-950 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-zinc-500"
               />
             </div>
 
@@ -54,13 +54,13 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="super secret"
-                className="border-zinc-700 bg-zinc-950 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-zinc-500"
+                className="border-zinc-800 sm:border-zinc-700 bg-zinc-900 sm:bg-zinc-950 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-zinc-500"
               />
             </div>
 
             <Button
               type="submit"
-              className="w-full text-zinc-100 bg-zinc-950 hover:bg-zinc-800"
+              className="w-full bg-zinc-100 text-zinc-950 hover:bg-zinc-200 sm:bg-zinc-950 sm:text-zinc-100 sm:hover:bg-zinc-800"
             >
               Login
             </Button>
