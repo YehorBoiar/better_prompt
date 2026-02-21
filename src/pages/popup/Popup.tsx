@@ -9,15 +9,25 @@ import {
   RadialBarChart,
 } from "recharts";
 import { useEffect, useState } from "react";
+import { Info } from "lucide-react";
 
 const getScoreColor = (score: number) => {
-  if (score < 30) return "#22c55e"; // Green (Safe)
-  if (score < 60) return "#f59e0b"; // Amber (Warning)
-  return "#ef4444"; // Red (Critical)
+  if (score < 30) return "#22c55e";
+  if (score < 60) return "#f59e0b";
+  return "#ef4444";
 };
 
 export default function Popup() {
   const [score, setScore] = useState(0);
+
+  const showDetailsOnPage = () => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]?.id) {
+        chrome.tabs.sendMessage(tabs[0].id, { type: "SHOW_DETAILS_OVERLAY" });
+        window.close(); // Closes the popup so the user sees the main screen
+      }
+    });
+  };
 
   useEffect(() => {
     chrome.runtime.sendMessage({ type: "GET_SCORE" }, (response) => {
@@ -115,11 +125,18 @@ export default function Popup() {
         </RadialBarChart>
       </ChartContainer>
 
-      <div className="w-full px-5 pb-5">
+      <div className="grid w-full grid-cols-2 gap-3 px-5 pb-5">
+        <Button
+          variant="outline"
+          onClick={showDetailsOnPage}
+          className="border-zinc-800 bg-zinc-900 hover:bg-zinc-800 hover:text-white"
+        >
+          <Info className="mr-2 h-4 w-4" /> Details
+        </Button>
         <Button
           onClick={openLoginPage}
           variant="outline"
-          className="block w-full border-zinc-800 bg-zinc-900 text-zinc-100 hover:bg-zinc-800 hover:text-white"
+          className="border-zinc-800 bg-zinc-900 text-zinc-100 hover:bg-zinc-800 hover:text-white"
         >
           Login
         </Button>
