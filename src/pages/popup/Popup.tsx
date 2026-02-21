@@ -6,11 +6,14 @@ import {
   RadialBar,
   RadialBarChart,
 } from "recharts";
+import { useEffect, useState } from "react";
 
 export default function Popup() {
   const chartData = [
     { browser: "safari", visitors: 200, fill: "var(--color-safari)" },
   ];
+  const [value, setValue] = useState("");
+
   const chartConfig = {
     visitors: {
       label: "Visitors",
@@ -20,6 +23,12 @@ export default function Popup() {
       color: "var(--chart-2)",
     },
   } satisfies ChartConfig;
+
+  useEffect(() => {
+    chrome.runtime.sendMessage({ type: "GET_INPUT" }, (response) => {
+      setValue(response);
+    });
+  }, []);
 
   return (
     <ChartContainer
@@ -64,7 +73,8 @@ export default function Popup() {
                       y={(viewBox.cy || 0) + 24}
                       className="fill-muted-foreground"
                     >
-                      Visitors
+                      {/* FIXME: this just outputs junk for now */}
+                      pop up {value} 
                     </tspan>
                   </text>
                 );
