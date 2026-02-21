@@ -5,7 +5,11 @@ const observeInput = () => {
       console.log("Editable div found:", input);
 
       input.addEventListener("input", () => {
-        console.log("Current content:", input.textContent);
+        const value = input.textContent || "";
+        chrome.runtime.sendMessage({
+          type: "INPUT_UPDATED",
+          payload: value,
+        });
       });
 
       observer.disconnect();
