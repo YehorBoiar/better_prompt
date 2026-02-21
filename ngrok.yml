@@ -1,0 +1,12 @@
+# This file configures ngrok to run multiple tunnels at once.
+# To start, run the command: ngrok start --all
+
+version: "2"
+authtoken: 32KjQePZACyBwUjljLka3EDU45d_29L1gsUz2E4Xeg5aKqRT7
+tunnels:
+  backend:
+    proto: http
+    addr: 3000
+  supabase:
+    proto: http
+    addr: 5173

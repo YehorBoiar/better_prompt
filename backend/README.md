@@ -43,3 +43,8 @@ BLOCK
   curl -s -X POST http://localhost:3000/block \
     -H "Authorisation: $SESSION_TOKEN"
 ```
+
+
+
+
+ngrok start --all --config ngrok.yml
