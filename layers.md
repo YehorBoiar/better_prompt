@@ -1,4 +1,4 @@
-# Heuristic 1 — Pattern Matching (High Precision)
+# Heuristic 1 - Pattern Matching (High Precision)
 
 Detect:
 
@@ -27,7 +27,7 @@ Example thresholds
     API-like key without validation → +30
 
 
-# Heuristic 2 — Entropy Detection
+# Heuristic 2 - Entropy Detection
 
 Secrets tend to be:
 
@@ -54,7 +54,7 @@ Example thresholds:
 
 Fast. Local. No AI needed.
 
-# Heuristic 3 — Contextual Heuristics
+# Heuristic 3 - Contextual Heuristics
 
 Keyword triggers:
 
@@ -68,7 +68,7 @@ Keyword triggers:
 
 
 <!-- 
-Heuristic 4 (Optional) — Local Mini Model
+Heuristic 4 (Optional) - Local Mini Model
 
 If you want sophistication:
 
