@@ -1,4 +1,5 @@
 import { ChartConfig, ChartContainer } from "@src/components/ui/chart";
+import { Button } from "@src/components/ui/button";
 import {
   Label,
   PolarAngleAxis,
@@ -26,6 +27,14 @@ export default function Popup() {
     });
   }, []);
 
+  const openLoginPage = () => {
+    if (chrome.runtime.openOptionsPage) {
+      chrome.runtime.openOptionsPage();
+    } else {
+      window.open(chrome.runtime.getURL("src/pages/options/index.html"));
+    }
+  };
+
   const chartData = [
     { name: "Risk", value: score, fill: getScoreColor(score) },
   ];
@@ -35,8 +44,8 @@ export default function Popup() {
   } satisfies ChartConfig;
 
   return (
-    <div className="flex w-[320px] flex-col items-center justify-center bg-zinc-950 p-6 text-zinc-50">
-      <div className="mb-2 w-full text-center">
+    <div className="flex w-[320px] flex-col items-center justify-center bg-zinc-950 text-zinc-50">
+      <div className="mb-2 mt-5 w-full text-center">
         <h2 className="text-lg font-semibold tracking-tight text-zinc-100">
           Security Scan
         </h2>
@@ -60,7 +69,6 @@ export default function Popup() {
             angleAxisId={0}
             tick={false}
           />
-          {/* Subtle background track for dark mode */}
           <PolarGrid
             gridType="circle"
             radialLines={false}
@@ -70,7 +78,7 @@ export default function Popup() {
           />
           <RadialBar
             dataKey="value"
-            background={{ fill: "#27272a" }} // zinc-800 background track
+            background={{ fill: "#27272a" }}
             cornerRadius={10}
           />
           <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
@@ -106,6 +114,16 @@ export default function Popup() {
           </PolarRadiusAxis>
         </RadialBarChart>
       </ChartContainer>
+
+      <div className="w-full px-5 pb-5">
+        <Button
+          onClick={openLoginPage}
+          variant="outline"
+          className="block w-full border-zinc-800 bg-zinc-900 text-zinc-100 hover:bg-zinc-800 hover:text-white"
+        >
+          Login
+        </Button>
+      </div>
     </div>
   );
 }
