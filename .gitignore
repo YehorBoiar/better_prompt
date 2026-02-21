@@ -392,3 +392,7 @@ $RECYCLE.BIN/
 public/manifest.json
 
 backend/app/__pycache__
+
+venv
+
+app.sqlite3
