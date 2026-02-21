@@ -1,18 +1,8 @@
-import { useEffect, useState } from "react";
-
 /**
- * Gives heuristic eval without requiring any props
+ * Gives safety eval given a prompt from 0-100
  */
-export default function evaluator() {
-  const [value, setValue] = useState("");
-
-  useEffect(() => {
-    chrome.runtime.sendMessage({ type: "GET_INPUT" }, (response) => {
-      setValue(response);
-    });
-  }, []);
-
-  const heuristic1_score = heuristic1(value);
+export default function evaluator(message: string) {
+  const heuristic1_score = heuristic1(message);
 
   console.log(heuristic1_score);
 
