@@ -8,6 +8,7 @@ from typing import Dict
 
 from fastapi import Cookie, Depends, FastAPI, Header, HTTPException, Response, status
 from fastapi.responses import PlainTextResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from fastapi import FastAPI
@@ -17,6 +18,13 @@ from .db import init_db
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # For hackathon speed, allow everything. 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("startup")
 def on_startup() -> None:

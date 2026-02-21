@@ -391,7 +391,7 @@ $RECYCLE.BIN/
 #generated manifest
 public/manifest.json
 
-backend/app/__pycache__
+__pycache__
 
 venv
 

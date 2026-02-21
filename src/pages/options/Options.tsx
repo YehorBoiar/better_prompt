@@ -12,11 +12,44 @@ import {
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login submitted:", { username, password });
-    // TODO: Add your auth logic here
+    if (!username || !password) return;
+
+    setIsLoading(true);
+    try {
+      const response = await fetch("https://e7b4-138-195-55-205.ngrok-free.app/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || "Login failed");
+      }
+
+      const data = await response.json();
+      console.log("Success:", data);
+
+      // 1. Store token for Web (iPhone)
+      localStorage.setItem("session_token", data.session_token);
+
+      // 2. Store token for Chrome Extension (if applicable)
+      if (typeof chrome !== "undefined" && chrome.storage) {
+        await chrome.storage.local.set({ session_token: data.session_token });
+      }
+
+      alert(data.is_new_user ? "Account created!" : "Logged in!");
+
+      // Redirect or update UI state here
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -60,9 +93,10 @@ export default function LoginPage() {
 
             <Button
               type="submit"
+              disabled={isLoading}
               className="w-full bg-zinc-100 text-zinc-950 hover:bg-zinc-200 sm:bg-zinc-950 sm:text-zinc-100 sm:hover:bg-zinc-800"
             >
-              Login
+              {isLoading ? "Processing..." : "Login"}
             </Button>
           </form>
         </CardContent>
