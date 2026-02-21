@@ -1,7 +1,7 @@
 
 # Created by https://www.toptal.com/developers/gitignore/api/webstorm+all,visualstudiocode,sublimetext,node,react,windows,macos,linux
 # Edit at https://www.toptal.com/developers/gitignore?templates=webstorm+all,visualstudiocode,sublimetext,node,react,windows,macos,linux
-
+*.txt
 ### Linux ###
 *~
 
@@ -392,3 +392,7 @@ $RECYCLE.BIN/
 public/manifest.json
 
 backend/app/__pycache__
+
+venv
+
+app.sqlite3

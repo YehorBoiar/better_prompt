@@ -1,11 +1,26 @@
+import evaluator from "@src/lib/evaluator";
+
 const observeInput = () => {
   const findInput = () => {
     const input = document.querySelector('[contenteditable="true"]');
-    if (input) {
-      console.log("Editable div found:", input);
 
-      input.addEventListener("input", () => {
-        console.log("Current content:", input.textContent);
+    if (input) {
+      const evaluate = () => {
+        const value = input.textContent || "";
+        const score = evaluator(value);
+        chrome.runtime.sendMessage({
+          type: "SCORE_UPDATED",
+          payload: score,
+        });
+      };
+
+      input.addEventListener("input", evaluate);
+
+      const textObserver = new MutationObserver(evaluate);
+      textObserver.observe(input, {
+        characterData: true,
+        childList: true,
+        subtree: true,
       });
 
       observer.disconnect();
@@ -19,6 +34,7 @@ const observeInput = () => {
 };
 
 observeInput();
+
 try {
   console.log("content script loaded");
 } catch (e) {
