@@ -29,6 +29,7 @@ def init_db() -> None:
                 user_id INTEGER NOT NULL UNIQUE,
                 card_id TEXT NOT NULL UNIQUE,
                 last_ctr INTEGER NOT NULL DEFAULT 0,
+                static_mac TEXT,
                 created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
                 FOREIGN KEY(user_id) REFERENCES users(id)
             )
@@ -44,3 +45,5 @@ def _ensure_cards_schema(conn: sqlite3.Connection) -> None:
     if "last_ctr" not in columns:
         conn.execute(
             "ALTER TABLE cards ADD COLUMN last_ctr INTEGER NOT NULL DEFAULT 0")
+    if "static_mac" not in columns:
+        conn.execute("ALTER TABLE cards ADD COLUMN static_mac TEXT")
