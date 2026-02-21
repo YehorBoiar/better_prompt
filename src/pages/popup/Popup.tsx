@@ -1,6 +1,7 @@
 import { ChartConfig, ChartContainer } from "@src/components/ui/chart";
 import {
   Label,
+  PolarAngleAxis,
   PolarGrid,
   PolarRadiusAxis,
   RadialBar,
@@ -40,11 +41,17 @@ export default function Popup() {
     >
       <RadialBarChart
         data={chartData}
-        startAngle={0}
-        endAngle={250}
+        startAngle={90}
+        endAngle={-270}
         innerRadius={80}
         outerRadius={110}
       >
+        <PolarAngleAxis
+          type="number"
+          domain={[0, 100]}
+          angleAxisId={0}
+          tick={false}
+        />
         <PolarGrid
           gridType="circle"
           radialLines={false}
@@ -76,8 +83,7 @@ export default function Popup() {
                       y={(viewBox.cy || 0) + 24}
                       className="fill-muted-foreground"
                     >
-                      {/* FIXME: this just outputs junk for now */}
-                      safety score
+                      Safety Score
                     </tspan>
                   </text>
                 );
