@@ -1,14 +1,16 @@
+import evaluator from "@src/lib/evaluator";
+
 const observeInput = () => {
   const findInput = () => {
     const input = document.querySelector('[contenteditable="true"]');
     if (input) {
-      console.log("Editable div found:", input);
-
       input.addEventListener("input", () => {
         const value = input.textContent || "";
+        const score = evaluator(value);
+
         chrome.runtime.sendMessage({
-          type: "INPUT_UPDATED",
-          payload: value,
+          type: "SCORE_UPDATED",
+          payload: score,
         });
       });
 

@@ -9,10 +9,19 @@ import {
 import { useEffect, useState } from "react";
 
 export default function Popup() {
+  const [score, setScore] = useState(0);
+
+  useEffect(() => {
+    chrome.runtime.sendMessage({ type: "GET_SCORE" }, (response) => {
+      if (typeof response === "number") {
+        setScore(response);
+      }
+    });
+  }, []);
+
   const chartData = [
-    { browser: "safari", visitors: 200, fill: "var(--color-safari)" },
+    { browser: "safari", visitors: score, fill: "var(--color-safari)" },
   ];
-  const [value, setValue] = useState("");
 
   const chartConfig = {
     visitors: {
@@ -23,12 +32,6 @@ export default function Popup() {
       color: "var(--chart-2)",
     },
   } satisfies ChartConfig;
-
-  useEffect(() => {
-    chrome.runtime.sendMessage({ type: "GET_INPUT" }, (response) => {
-      setValue(response);
-    });
-  }, []);
 
   return (
     <ChartContainer
@@ -74,7 +77,7 @@ export default function Popup() {
                       className="fill-muted-foreground"
                     >
                       {/* FIXME: this just outputs junk for now */}
-                      pop up {value} 
+                      safety score
                     </tspan>
                   </text>
                 );
