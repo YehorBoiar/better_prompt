@@ -5,6 +5,23 @@ import time
 
 app = FastAPI()
 
+PENDING = False
+PENDING_UNTIL = 0.0
+
+# check if pending is not expired and exists
+
+
+def _check_pending():
+    global PENDING, PENDING_UNTIL
+    if not PENDING:
+        print("[TAP]: no pending")
+        raise HTTPException(status_code=400, detail="[TAP]: no pending")
+    if time.time() > PENDING_UNTIL:
+        PENDING = False
+        print("[TAP]: pending expired")
+        raise HTTPException(
+            status_code=400, detail="[TAP]: pending expired")
+
 
 @app.get("/health")
 def health():
@@ -29,19 +46,8 @@ async def tap(k: str | None = None):
     global PENDING
     _check_pending()
     if k != APPROVAL_KEY:
+        print("[TAP]: key bad")
         raise HTTPException(status_code=403, detail="[TAP]: key bad")
     PENDING = False
     print("[TAP]: ur prompt is approved")
     return "ok"
-
-# check if pending is not expired and exists
-
-
-def _check_pending():
-    global PENDING, PENDING_UNTIL
-    if not PENDING:
-        raise HTTPException(status_code=400, detail="[TAP]: no pending")
-    if time.time() > PENDING_UNTIL:
-        PENDING = False
-        raise HTTPException(
-            status_code=400, detail="[TAP]: pending expired")
