@@ -1,4 +1,4 @@
-from fastAPI import FastAPI, HTTPException, request
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import PlainTextResponse
 from .config import APPROVAL_KEY
 import time
