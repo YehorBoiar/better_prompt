@@ -1,31 +1,44 @@
+export interface HeuristicMatch {
+  title: string;
+  description: string;
+  score: number;
+  keywords: string[];
+}
+
+export interface EvaluationResult {
+  score: number;
+  matches: HeuristicMatch[];
+}
+
 /**
- * Gives safety eval given a prompt from 0-100
+ * Gives safety eval given a prompt from 0-100, along with detailed explanations.
  */
-export default function evaluator(message: string): number {
-  const h1_score = heuristic1(message);
-  const h2_score = heuristic2(message);
-  const h3_score = heuristic3(message);
+export default function evaluator(message: string): EvaluationResult {
+  const matches: HeuristicMatch[] = [];
 
-  // Sum the heuristic scores, capped at 100
-  const totalScore = Math.min(h1_score + h2_score + h3_score, 100);
+  const h1Match = heuristic1(message);
+  if (h1Match) matches.push(h1Match);
 
-  console.log(`H1: ${h1_score}, H2: ${h2_score}, H3: ${h3_score}, Total: ${totalScore}`);
+  const h2Match = heuristic2(message);
+  if (h2Match) matches.push(h2Match);
 
-  return totalScore;
+  const h3Match = heuristic3(message);
+  if (h3Match) matches.push(h3Match);
+
+  // Sum the highest scores from each triggered heuristic
+  const totalScore = matches.reduce((sum, match) => sum + match.score, 0);
+
+  return {
+    score: Math.min(totalScore, 100),
+    matches,
+  };
 }
 
 /**
  * Heuristic 1: Contextual Heuristics
- * Just matching the keywords
- *
- * - "database dump" -> +8
- * - "production" -> +6
- * - "confidential" -> +5
- * - "internal" -> +4
- * - "client data" -> +6
- * - "proprietary" -> +4
+ * Matches specific high-risk vocabulary.
  */
-function heuristic1(message: string): number {
+function heuristic1(message: string): HeuristicMatch | null {
   const rules = [
     { keyword: "database dump", score: 8 },
     { keyword: "production", score: 6 },
@@ -36,18 +49,31 @@ function heuristic1(message: string): number {
   ];
 
   const normalizedMessage = message.toLowerCase();
+  const matchedKeywords: string[] = [];
+  let maxScore = 0;
 
-  for (const { keyword, score } of rules) {
-    if (normalizedMessage.includes(keyword)) {
-      return score;
+  for (const rule of rules) {
+    if (normalizedMessage.includes(rule.keyword)) {
+      matchedKeywords.push(rule.keyword);
+      maxScore = Math.max(maxScore, rule.score);
     }
   }
 
-  return 0;
+  if (matchedKeywords.length > 0) {
+    return {
+      title: "Sensitive Keywords Detected",
+      description:
+        "The text contains terms commonly associated with internal, restricted, or proprietary company data.",
+      score: maxScore,
+      keywords: matchedKeywords,
+    };
+  }
+
+  return null;
 }
 
 /**
- * Luhn Algorithm for Credit Card validation
+ * Luhn Algorithm for Credit Card validation (Helper for H2)
  */
 function isValidLuhn(ccNum: string): boolean {
   const sanitized = ccNum.replace(/[- ]/g, "");
@@ -63,52 +89,72 @@ function isValidLuhn(ccNum: string): boolean {
 }
 
 /**
- * Heuristic 2: Pattern Matching
- *
- *  - API keys (regex patterns: sk-, AIza, JWT structure)
- *  - AWS keys
- *  - Private keys (-----BEGIN PRIVATE KEY-----)
- *  - Email addresses
- *  - IBAN
- *  - Credit card numbers (Luhn check)
+ * Heuristic 2: Pattern Matching (Regex & Luhn)
+ * Identifies API Keys, PII, and financial data formats.
  */
-function heuristic2(message: string): number {
+function heuristic2(message: string): HeuristicMatch | null {
+  const matchedTypes: string[] = [];
   let maxScore = 0;
 
   const regexRules = [
-    { regex: /-----BEGIN PRIVATE KEY-----/, score: 60 },
-    { regex: /\bAKIA[0-9A-Z]{16}\b/, score: 50 }, // AWS Key
-    { regex: /\bsk-[a-zA-Z0-9]{32,}\b/, score: 50 }, // OpenAI Key
+    { name: "Private Key", regex: /-----BEGIN PRIVATE KEY-----/, score: 60 },
+    { name: "AWS Key", regex: /\bAKIA[0-9A-Z]{16}\b/, score: 50 },
+    { name: "OpenAI Key", regex: /\bsk-[a-zA-Z0-9]{32,}\b/, score: 50 },
     {
+      name: "JWT Token",
       regex: /eyJ[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*/,
       score: 40,
-    }, // JWT
-    { regex: /\b[A-Z]{2}[0-9]{2}(?:[ ]?[0-9a-zA-Z]{4}){3,7}\b/, score: 30 }, // IBAN
-    { regex: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/, score: 20 }, // Email
+    },
     {
+      name: "IBAN",
+      regex: /\b[A-Z]{2}[0-9]{2}(?:[ ]?[0-9a-zA-Z]{4}){3,7}\b/,
+      score: 30,
+    },
+    {
+      name: "Email Address",
+      regex: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/,
+      score: 20,
+    },
+    {
+      name: "High-Entropy Pattern",
       regex: /\b(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])[a-zA-Z0-9]{30,}\b/,
       score: 30,
-    }, // High Entropy
+    },
   ];
 
-  // 1. Check Regex rules
-  for (const { regex, score } of regexRules) {
-    if (regex.test(message)) {
-      maxScore = Math.max(maxScore, score);
+  // 1. Check strict regex patterns
+  for (const rule of regexRules) {
+    if (rule.regex.test(message)) {
+      matchedTypes.push(rule.name);
+      maxScore = Math.max(maxScore, rule.score);
     }
   }
 
   // 2. Check Credit Cards with Luhn validation
   const ccMatches = message.match(/\b(?:\d[ -]*?){13,16}\b/g);
-  if (ccMatches && ccMatches.some(isValidLuhn)) {
-    maxScore = Math.max(maxScore, 50);
+  if (ccMatches) {
+    const validCCs = ccMatches.filter(isValidLuhn);
+    if (validCCs.length > 0) {
+      matchedTypes.push("Credit Card (Luhn Validated)");
+      maxScore = Math.max(maxScore, 50);
+    }
   }
 
-  return maxScore;
+  if (matchedTypes.length > 0) {
+    return {
+      title: "Credential & PII Patterns",
+      description:
+        "The text contains structures matching known API keys, financial data, or personally identifiable information.",
+      score: maxScore,
+      keywords: matchedTypes, // Note: We pass the RULE NAME here, not the actual secret, to keep the UI safe!
+    };
+  }
+
+  return null;
 }
 
 /**
- * Calculates Shannon entropy of a string
+ * Calculates Shannon entropy of a string (Helper for H3)
  */
 function calculateEntropy(str: string): number {
   const len = str.length;
@@ -126,19 +172,17 @@ function calculateEntropy(str: string): number {
 }
 
 /**
- * Heuristic 3: Entropy Detection (Base64 / Hex-like secrets)
+ * Heuristic 3: Entropy Detection
+ * Catches randomized strings that look like un-regexable secrets.
  */
-function heuristic3(message: string): number {
+function heuristic3(message: string): HeuristicMatch | null {
   let maxScore = 0;
+  const matchedMasks: string[] = [];
 
-  // Extract words using boundaries (whitespace, quotes, brackets)
   const words = message.split(/[\s,;:"'()[\]{}]+/);
-
-  // Matches Alphanumeric + standard Base64 characters
   const base64Regex = /^[a-zA-Z0-9+/=\-_]+$/;
 
   for (const word of words) {
-    // Require length > 24 and base64/hex-like format
     if (word.length > 24 && base64Regex.test(word)) {
       const entropy = calculateEntropy(word);
       let score = 0;
@@ -151,9 +195,26 @@ function heuristic3(message: string): number {
         score = 10;
       }
 
-      maxScore = Math.max(maxScore, score);
+      if (score > 0) {
+        maxScore = Math.max(maxScore, score);
+        // Mask the string so we don't display a raw secret in the Details overlay
+        const masked = `${word.substring(0, 4)}...${word.substring(
+          word.length - 4
+        )}`;
+        matchedMasks.push(`Entropy ${entropy.toFixed(2)}: ${masked}`);
+      }
     }
   }
 
-  return maxScore;
+  if (matchedMasks.length > 0) {
+    return {
+      title: "High Entropy Secrets",
+      description:
+        "Detected dense, randomized text blocks that heavily resemble cryptographic keys or base64 encoded payloads.",
+      score: maxScore,
+      keywords: matchedMasks,
+    };
+  }
+
+  return null;
 }
