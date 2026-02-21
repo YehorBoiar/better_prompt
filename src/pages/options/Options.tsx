@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@src/components/ui/card";
+import { buildBackendUrl } from "@src/lib/backend";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -20,7 +21,7 @@ export default function LoginPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch("https://e7b4-138-195-55-205.ngrok-free.app/login", {
+      const response = await fetch(buildBackendUrl("/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
