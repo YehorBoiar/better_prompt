@@ -14,4 +14,11 @@ export default defineConfig({
       "@components": path.resolve(__dirname, "./src/components"),
     },
   },
+  server: {
+    allowedHosts: [
+      "localhost",
+      "nonreflected-triatomically-tony.ngrok-free.dev",
+      "brynlee-indiscretionary-unforgetfully.ngrok-free.dev",
+    ],
+  },
 });
