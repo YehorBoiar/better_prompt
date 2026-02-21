@@ -4,11 +4,12 @@
 export default function evaluator(message: string): number {
   const h1_score = heuristic1(message);
   const h2_score = heuristic2(message);
+  const h3_score = heuristic3(message);
 
   // Sum the heuristic scores, capped at 100
-  const totalScore = Math.min(h1_score + h2_score, 100);
+  const totalScore = Math.min(h1_score + h2_score + h3_score, 100);
 
-  console.log(`H1: ${h1_score}, H2: ${h2_score}, Total: ${totalScore}`);
+  console.log(`H1: ${h1_score}, H2: ${h2_score}, H3: ${h3_score}, Total: ${totalScore}`);
 
   return totalScore;
 }
@@ -63,7 +64,7 @@ function isValidLuhn(ccNum: string): boolean {
 
 /**
  * Heuristic 2: Pattern Matching
- * 
+ *
  *  - API keys (regex patterns: sk-, AIza, JWT structure)
  *  - AWS keys
  *  - Private keys (-----BEGIN PRIVATE KEY-----)
@@ -101,6 +102,57 @@ function heuristic2(message: string): number {
   const ccMatches = message.match(/\b(?:\d[ -]*?){13,16}\b/g);
   if (ccMatches && ccMatches.some(isValidLuhn)) {
     maxScore = Math.max(maxScore, 50);
+  }
+
+  return maxScore;
+}
+
+/**
+ * Calculates Shannon entropy of a string
+ */
+function calculateEntropy(str: string): number {
+  const len = str.length;
+  const frequencies: Record<string, number> = {};
+
+  for (let i = 0; i < len; i++) {
+    const char = str[i];
+    frequencies[char] = (frequencies[char] || 0) + 1;
+  }
+
+  return Object.values(frequencies).reduce((entropy, count) => {
+    const p = count / len;
+    return entropy - p * Math.log2(p);
+  }, 0);
+}
+
+/**
+ * Heuristic 3: Entropy Detection (Base64 / Hex-like secrets)
+ */
+function heuristic3(message: string): number {
+  let maxScore = 0;
+
+  // Extract words using boundaries (whitespace, quotes, brackets)
+  const words = message.split(/[\s,;:"'()[\]{}]+/);
+
+  // Matches Alphanumeric + standard Base64 characters
+  const base64Regex = /^[a-zA-Z0-9+/=\-_]+$/;
+
+  for (const word of words) {
+    // Require length > 24 and base64/hex-like format
+    if (word.length > 24 && base64Regex.test(word)) {
+      const entropy = calculateEntropy(word);
+      let score = 0;
+
+      if (entropy > 4.5) {
+        score = 25;
+      } else if (entropy >= 4.0) {
+        score = 15;
+      } else if (entropy >= 3.5) {
+        score = 10;
+      }
+
+      maxScore = Math.max(maxScore, score);
+    }
   }
 
   return maxScore;

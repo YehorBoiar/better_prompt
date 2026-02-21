@@ -27,7 +27,7 @@ Example thresholds
     API-like key without validation → +30
 
 
-# Heuristic 2 - Entropy Detection
+# Heuristic 3 - Entropy Detection
 
 Secrets tend to be:
 
@@ -54,7 +54,7 @@ Example thresholds:
 
 Fast. Local. No AI needed.
 
-# Heuristic 3 - Contextual Heuristics
+# Heuristic 1 - Contextual Heuristics
 
 Keyword triggers:
 
