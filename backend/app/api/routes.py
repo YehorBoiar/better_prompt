@@ -67,13 +67,18 @@ async def block(user_id: int = Depends(require_session)):
 
 
 @router.get("/tap")
-async def enroll(sun: str, ctr: int, mac: str, user_id: int = Depends(require_session)):
+async def tap(sun: str, ctr: int, mac: str, user_id: int = Depends(require_session)):
     cards.verify_sdm_payload(sun, ctr, mac)
     card_id = cards.derive_card_id_from_sun(sun)
     if cards.card_belongs_to_user(card_id, user_id):
         cards.ensure_pending(user_id)
-        assignment = cards.persist_card_assignment(user_id, card_id, ctr)
+        assignment = cards.persist_card_assignment(user_id, card_id, ctr, mac)
         cards.clear_pending(user_id)
         assignment["status"] = "pending_cleared"
         return assignment
-    return cards.persist_card_assignment(user_id, card_id, ctr)
+    return cards.persist_card_assignment(user_id, card_id, ctr, mac)
+
+
+@router.options("/tap")
+def tap_options() -> Response:
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
