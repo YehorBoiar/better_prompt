@@ -9,6 +9,17 @@ export default function evaluator(message: string) {
   return heuristic1_score;
 }
 
+/**
+* Heuristic 1: Contextual Heuristics
+* Just matching the keywords
+*
+* - "database dump" -> +8
+* - "production" -> +6
+* - "confidential" -> +5
+* - "internal" -> +4
+* - "client data" -> +6
+* - "proprietary" -> +4
+*/ 
 function heuristic1(message: string): number {
   const rules = [
     { keyword: "database dump", score: 8 },
