@@ -33,7 +33,7 @@ CARD REGISTER
 ```
   curl -s -X POST http://localhost:3000/card/register \
     -H "Content-Type: application/json" \
-    -H "X-Session-Token: $SESSION_TOKEN" \
+    -H "Authorisation: $SESSION_TOKEN" \
     -d '{"card_id":"aaa"}'
 ```
 
@@ -41,5 +41,5 @@ BLOCK
 
 ```
   curl -s -X POST http://localhost:3000/block \
-    -H "X-Session-Token: $SESSION_TOKEN"
+    -H "Authorisation: $SESSION_TOKEN"
 ```
