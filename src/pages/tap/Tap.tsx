@@ -148,10 +148,10 @@ export default function Tap() {
                 phase === "success"
                   ? "bg-emerald-500/20 text-emerald-300"
                   : phase === "processing"
-                    ? "bg-blue-500/20 text-blue-200"
-                    : phase === "auth"
-                      ? "bg-amber-500/20 text-amber-200"
-                      : "bg-zinc-700/60 text-zinc-200"
+                  ? "bg-blue-500/20 text-blue-200"
+                  : phase === "auth"
+                  ? "bg-amber-500/20 text-amber-200"
+                  : "bg-zinc-700/60 text-zinc-200"
               }`}
             >
               {phase.toUpperCase()}

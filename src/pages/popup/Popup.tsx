@@ -52,14 +52,11 @@ export default function Popup() {
     chrome.storage.local.remove("session_token", () => {
       setIsLoggedIn(false);
     });
+    localStorage.removeItem("session_token");
   };
 
   const openLoginPage = () => {
-    if (chrome.runtime.openOptionsPage) {
-      chrome.runtime.openOptionsPage();
-    } else {
-      window.open(chrome.runtime.getURL("src/pages/options/index.html"));
-    }
+    window.open(chrome.runtime.getURL("src/pages/options/index.html"));
   };
 
   const chartData = [
