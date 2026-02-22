@@ -72,7 +72,7 @@ def verify_sdm_payload(sun: str, ctr: int, mac: str) -> None:
     if provided != stored_mac.lower():
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="OH NAWR: invalid SDM signature (static)",
+            detail="OH NAWR: invalid SDM signature",
         )
 
 # this is the main function that registers a card to a user,
