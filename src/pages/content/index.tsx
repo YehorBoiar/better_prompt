@@ -5,16 +5,29 @@ const BLOCK_THRESHOLD = 69;
 
 let isBackendBlocked = true;
 
+if (
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1"
+) {
+  const localToken = localStorage.getItem("session_token");
+  if (localToken) {
+    chrome.storage.local.set({ session_token: localToken }, () => {
+      console.log("🔗 Extension successfully synced token from Web App!");
+    });
+  }
+}
+
 const startBlockPolling = () => {
   setInterval(() => {
     chrome.storage.local.get(["session_token"], async (result) => {
       const token = result.session_token;
       if (!token) throw new Error("NO TOKEN");
-
+      console.log(token);
+      
       console.log(isBackendBlocked);
 
       try {
-        const response = await fetch(`${backendBaseUrl}/block`, {
+        const response = await fetch(`${backendBaseUrl}/blocked`, {
           method: "GET",
           headers: {
             // Adjust header depending on how your FastAPI require_session expects the token
