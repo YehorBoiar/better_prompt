@@ -131,9 +131,12 @@ export default function Tap() {
           <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">
             Better Prompt
           </p>
-          <h1 className="text-3xl font-semibold text-zinc-100">Tap Portal</h1>
-          <p className="text-sm text-zinc-400">
-            Link your NFC card or approve a pending block right from your phone.
+          <h1 className="text-3xl font-semibold text-zinc-100">OopsLock</h1>
+          <p
+            className="text-sm text-zinc-400 mx-10
+          "
+          >
+            a.k.a. How To Not Leak Your Company Secrets Into LLMs 3000
           </p>
         </header>
 
@@ -154,23 +157,30 @@ export default function Tap() {
               {phase.toUpperCase()}
             </span>
           </div>
-
-          <p className="text-lg font-medium text-zinc-100">
-            {parsedStatusMessage}
-          </p>
-          {error && <p className="mt-2 text-sm text-rose-400">{error}</p>}
-
-          <div className="mt-6 space-y-2 text-sm text-zinc-400">
-            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
-              Card payload
+          {error ? (
+            <p className="mt-2 text-center font-bold text-2xl text-red-500">
+              {error}
             </p>
-            <div className="rounded-xl border border-zinc-800 bg-zinc-950/40 p-4 text-xs">
-              <p>SUN: {cardPayload?.sun ?? "—"}</p>
-              <p>CTR: {cardPayload?.ctr ?? "—"}</p>
-              <p>MAC: {cardPayload?.mac ?? "—"}</p>
-            </div>
+          ) : (
+            <p className="mt-2 text-center font-bold text-2xl text-emerald-400">
+              {parsedStatusMessage}
+            </p>
+          )}
+          <div className="mt-6 flex justify-center mr-10">
+            {result?.status === "pending_cleared" ? (
+              <img
+                src="../../assets/img/good.svg"
+                alt="Success"
+                className="h-50 w-50"
+              />
+            ) : (
+              <img
+                src="../../assets/img/bad.svg"
+                alt="Error"
+                className="h-50 w-50"
+              />
+            )}
           </div>
-
           <div className="mt-6 flex flex-wrap gap-3">
             {phase === "auth" && (
               <>
@@ -186,27 +196,11 @@ export default function Tap() {
                 </Button>
               </>
             )}
-
-            {phase === "error" && (
-              <Button onClick={handleRetry} className="flex-1">
-                Retry
-              </Button>
-            )}
-
-            {phase === "success" && (
-              <Button
-                variant="secondary"
-                onClick={handleRetry}
-                className="flex-1"
-              >
-                Re-run Tap
-              </Button>
-            )}
           </div>
         </section>
 
         <footer className="text-center text-xs uppercase tracking-[0.4em] text-zinc-500">
-          NFC LINK • {new Date().getFullYear()}
+          Huzzah Team • {new Date().getFullYear()}
         </footer>
       </div>
     </div>
