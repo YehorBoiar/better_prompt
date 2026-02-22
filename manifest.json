@@ -9,11 +9,11 @@
   "action": {
     "default_popup": "src/pages/popup/index.html",
     "default_icon": {
-      "32": "icon-32.png"
+      "32": "logo-32.png"
     }
   },
   "icons": {
-    "128": "icon-128.png"
+    "128": "logo-128.png"
   },
   "permissions": ["activeTab", "storage"],
   "content_scripts": [
@@ -26,7 +26,7 @@
   "devtools_page": "src/pages/devtools/index.html",
   "web_accessible_resources": [
     {
-      "resources": ["contentStyle.css", "icon-128.png", "icon-32.png"],
+      "resources": ["contentStyle.css", "logo-128.png", "logo-32.png"],
       "matches": []
     }
   ]

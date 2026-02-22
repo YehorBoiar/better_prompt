@@ -98,7 +98,7 @@ export default function Popup() {
     <div className="flex w-[320px] flex-col items-center justify-center bg-zinc-950 text-zinc-50">
       <div className="mb-2 mt-5 w-full text-center">
         <h2 className="text-lg font-semibold tracking-tight text-zinc-100">
-          Security Scan
+          OopsLock
         </h2>
         <p className="text-xs text-zinc-400">Current Input Risk</p>
       </div>
