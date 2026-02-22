@@ -62,6 +62,11 @@ async def register_card(payload: CardRegistrationPayload, user_id: int = Depends
 async def block(user_id: int = Depends(require_session)):
     return cards.mark_block_pending(user_id)
 
+
+@router.get("/blocked/{user_id}")
+async def check_blocked(user_id: int):
+    return {"is_blocked": cards.is_user_blocked(user_id)}
+
 # if card linked to user -> verification tap to clear pending block and update ctr
 # if card not linked to user -> registration tap
 

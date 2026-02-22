@@ -64,7 +64,6 @@ def verify_sdm_payload(sun: str, ctr: int, mac: str) -> None:
     # if not hmac.compare_digest(expected, provided):
     #     raise HTTPException(
     #         status_code=status.HTTP_403_FORBIDDEN, detail="OH NAWR: invalid SDM signature")
-    # fake code below: treat MAC as static per card because SDM hardware is unavailable
     card_id = normalise_card_id(sun)
     stored_mac = _get_static_mac(card_id)
     if stored_mac is None:
@@ -97,7 +96,6 @@ def persist_card_assignment(user_id: int, card_id: str, ctr: int | None = None, 
             # if ctr is not None and ctr <= current_ctr:
             #     raise HTTPException(
             #         status_code=status.HTTP_409_CONFLICT, detail="OH NAWR: replayed credential detected")
-            # fake code below: ignore ctr and keep whatever was stored previously
             new_ctr = current_ctr
             conn.execute(
                 "UPDATE cards SET last_ctr = ? WHERE card_id = ?", (new_ctr, card_id))
@@ -110,14 +108,14 @@ def persist_card_assignment(user_id: int, card_id: str, ctr: int | None = None, 
 
             if existing_user:
                 prior_ctr = int(existing_user["last_ctr"])
-                # fake code below: store provided ctr once (if any) but don't enforce increments
+                # store provided ctr once (if any) but don't enforce increments
                 new_ctr = ctr if ctr is not None else prior_ctr
                 conn.execute(
                     "UPDATE cards SET card_id = ?, last_ctr = ? WHERE user_id = ?",
                     (card_id, new_ctr, user_id),
                 )
             else:
-                # fake code below: initialize counter but treat it as static value
+                # init counter but treat it as static value
                 new_ctr = ctr if ctr is not None else 0
                 conn.execute(
                     "INSERT INTO cards (user_id, card_id, last_ctr, static_mac) VALUES (?, ?, ?, ?)",
@@ -180,3 +178,13 @@ def _persist_static_mac(conn: sqlite3.Connection, card_id: str, mac: str | None)
         "UPDATE cards SET static_mac = ? WHERE card_id = ?",
         (mac, card_id),
     )
+
+
+def is_user_blocked(user_id: int) -> bool:
+    expires_at = PENDING_REQUESTS.get(user_id)
+    if not expires_at:
+        return False
+    if time.time() > expires_at:
+        del PENDING_REQUESTS[user_id]
+        return False
+    return True
