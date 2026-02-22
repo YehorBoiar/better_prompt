@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@src/components/ui/button";
 import { Input } from "@src/components/ui/input";
 import { Label } from "@src/components/ui/label";
@@ -8,11 +8,53 @@ import {
   CardHeader,
   CardTitle,
 } from "@src/components/ui/card";
+import { buildBackendUrl } from "@src/lib/backend";
+import { consumePendingTapUrl } from "@src/lib/tap-session";
+
+const ensureSameOrigin = (value: string | null) => {
+  if (!value || typeof window === "undefined") return null;
+  try {
+    const candidate = new URL(value, window.location.origin);
+    return candidate.origin === window.location.origin
+      ? candidate.toString()
+      : null;
+  } catch {
+    return null;
+  }
+};
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [redirectParam] = useState(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return ensureSameOrigin(params.get("redirect"));
+    } catch {
+      return null;
+    }
+  });
+
+  const redirectToPendingTap = useCallback(() => {
+    const pendingUrl = ensureSameOrigin(consumePendingTapUrl());
+    if (pendingUrl) {
+      window.location.href = pendingUrl;
+      return;
+    }
+
+    if (redirectParam) {
+      window.location.href = redirectParam;
+    }
+  }, [redirectParam]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("session_token");
+    if (token) {
+      redirectToPendingTap();
+    }
+  }, [redirectToPendingTap]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,9 +62,12 @@ export default function LoginPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch("https://e7b4-138-195-55-205.ngrok-free.app/login", {
+      const response = await fetch(buildBackendUrl("/login"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
         body: JSON.stringify({ username, password }),
       });
 
@@ -45,6 +90,7 @@ export default function LoginPage() {
       alert(data.is_new_user ? "Account created!" : "Logged in!");
 
       // Redirect or update UI state here
+      redirectToPendingTap();
     } catch (err: any) {
       alert(err.message);
     } finally {
@@ -94,7 +140,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-zinc-100 text-zinc-950 hover:bg-zinc-200 sm:bg-zinc-950 sm:text-zinc-100 sm:hover:bg-zinc-800"
+              className="w-full bg-zinc-100 text-zinc-950 hover:bg-zinc-200 sm:bg-zinc-950 sm:text-zinc-100 sm:hover:bg-zinc-950"
             >
               {isLoading ? "Processing..." : "Login"}
             </Button>

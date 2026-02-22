@@ -2,11 +2,8 @@
 # To start, run the command: ngrok start --all
 
 version: "2"
-authtoken: 32KjQePZACyBwUjljLka3EDU45d_29L1gsUz2E4Xeg5aKqRT7
+authtoken: 39ztFCgLa7uKMNBidyjCifuV6DY_7uTNJo9GEz2b3YvKDY4xa
 tunnels:
   backend:
     proto: http
     addr: 3000
-  supabase:
-    proto: http
-    addr: 5173

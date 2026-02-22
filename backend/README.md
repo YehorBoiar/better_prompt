@@ -44,7 +44,4 @@ BLOCK
     -H "Authorisation: $SESSION_TOKEN"
 ```
 
-
-
-
 ngrok start --all --config ngrok.yml

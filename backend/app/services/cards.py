@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import sqlite3
 import time
 from contextlib import closing
 
@@ -53,23 +54,35 @@ def card_belongs_to_user(card_id: str, user_id: int) -> bool:
 
 
 def verify_sdm_payload(sun: str, ctr: int, mac: str) -> None:
-    if not SDM_SHARED_SECRET:
+    # if not SDM_SHARED_SECRET:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="SDM secret not configured")
+    # message = f"{sun}:{ctr}".encode("utf-8")
+    # expected = hmac.new(SDM_SHARED_SECRET.encode("utf-8"),
+    #                     message, hashlib.sha256).hexdigest()
+    # provided = mac.lower().replace(":", "")
+    # if not hmac.compare_digest(expected, provided):
+    #     raise HTTPException(
+    #         status_code=status.HTTP_403_FORBIDDEN, detail="OH NAWR: invalid SDM signature")
+    # fake code below: treat MAC as static per card because SDM hardware is unavailable
+    card_id = normalise_card_id(sun)
+    stored_mac = _get_static_mac(card_id)
+    if stored_mac is None:
+        return
+    provided = mac.strip().lower()
+    if provided != stored_mac.lower():
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="SDM secret not configured")
-    message = f"{sun}:{ctr}".encode("utf-8")
-    expected = hmac.new(SDM_SHARED_SECRET.encode("utf-8"),
-                        message, hashlib.sha256).hexdigest()
-    provided = mac.lower().replace(":", "")
-    if not hmac.compare_digest(expected, provided):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="OH NAWR: invalid SDM signature")
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="OH NAWR: invalid SDM signature (static)",
+        )
 
 # this is the main function that registers a card to a user,
 # it checks for conflicts and replays, and updates the last_ctr
 
 
-def persist_card_assignment(user_id: int, card_id: str, ctr: int | None = None) -> dict:
+def persist_card_assignment(user_id: int, card_id: str, ctr: int | None = None, mac: str | None = None) -> dict:
     with closing(get_connection()) as conn:
+        mac_value = mac.strip().lower() if mac else None
         existing_card = conn.execute(
             "SELECT user_id, last_ctr FROM cards WHERE card_id = ?",
             (card_id,),
@@ -81,12 +94,14 @@ def persist_card_assignment(user_id: int, card_id: str, ctr: int | None = None) 
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                                     detail="OH NAWR: card already assigned to a different user")
             current_ctr = int(existing_card["last_ctr"])
-            if ctr is not None and ctr <= current_ctr:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT, detail="OH NAWR: replayed credential detected")
-            new_ctr = ctr if ctr is not None else current_ctr
+            # if ctr is not None and ctr <= current_ctr:
+            #     raise HTTPException(
+            #         status_code=status.HTTP_409_CONFLICT, detail="OH NAWR: replayed credential detected")
+            # fake code below: ignore ctr and keep whatever was stored previously
+            new_ctr = current_ctr
             conn.execute(
                 "UPDATE cards SET last_ctr = ? WHERE card_id = ?", (new_ctr, card_id))
+            _persist_static_mac(conn, card_id, mac_value)
         else:
             existing_user = conn.execute(
                 "SELECT card_id, last_ctr FROM cards WHERE user_id = ?",
@@ -95,17 +110,20 @@ def persist_card_assignment(user_id: int, card_id: str, ctr: int | None = None) 
 
             if existing_user:
                 prior_ctr = int(existing_user["last_ctr"])
+                # fake code below: store provided ctr once (if any) but don't enforce increments
                 new_ctr = ctr if ctr is not None else prior_ctr
                 conn.execute(
                     "UPDATE cards SET card_id = ?, last_ctr = ? WHERE user_id = ?",
                     (card_id, new_ctr, user_id),
                 )
             else:
+                # fake code below: initialize counter but treat it as static value
                 new_ctr = ctr if ctr is not None else 0
                 conn.execute(
-                    "INSERT INTO cards (user_id, card_id, last_ctr) VALUES (?, ?, ?)",
-                    (user_id, card_id, new_ctr),
+                    "INSERT INTO cards (user_id, card_id, last_ctr, static_mac) VALUES (?, ?, ?, ?)",
+                    (user_id, card_id, new_ctr, mac_value),
                 )
+            _persist_static_mac(conn, card_id, mac_value)
         conn.commit()
 
     status_label = "card_registered" if is_new_card else "card_verified"
@@ -142,3 +160,23 @@ def ensure_pending(user_id: int) -> None:
 
 def clear_pending(user_id: int) -> None:
     PENDING_REQUESTS.pop(user_id, None)
+
+
+def _get_static_mac(card_id: str) -> str | None:
+    with closing(get_connection()) as conn:
+        row = conn.execute(
+            "SELECT static_mac FROM cards WHERE card_id = ?",
+            (card_id,),
+        ).fetchone()
+        if not row:
+            return None
+        return row["static_mac"]
+
+
+def _persist_static_mac(conn: sqlite3.Connection, card_id: str, mac: str | None) -> None:
+    if not mac:
+        return
+    conn.execute(
+        "UPDATE cards SET static_mac = ? WHERE card_id = ?",
+        (mac, card_id),
+    )
