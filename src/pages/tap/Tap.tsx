@@ -39,6 +39,28 @@ export default function Tap() {
     return STATUS_COPY[status] ?? message;
   }, [message, result]);
 
+  const isFirstLink = result?.status === "card_registered";
+  const statusImage = useMemo(() => {
+    if (result?.status === "pending_cleared" && !error) {
+      return {
+        src: "../../assets/img/good.svg",
+        alt: "Blocked prompt cleared",
+      };
+    }
+
+    if (isFirstLink) {
+      return {
+        src: "../../assets/img/link.svg",
+        alt: "Card linked",
+      };
+    }
+
+    return {
+      src: "../../assets/img/bad.svg",
+      alt: error ? "Tap error" : "Tap status",
+    };
+  }, [error, isFirstLink, result]);
+
   const triggerTap = useCallback(async (payload: CardPayload) => {
     if (!payload) return;
 
@@ -124,13 +146,51 @@ export default function Tap() {
     }
   };
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    let touchStartY = 0;
+    let canPullToRefresh = false;
+
+    const handleTouchStart = (event: TouchEvent) => {
+      if (event.touches.length !== 1) return;
+      touchStartY = event.touches[0].clientY;
+      canPullToRefresh = window.scrollY <= 0;
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      if (!canPullToRefresh) return;
+      const currentY = event.touches[0]?.clientY ?? touchStartY;
+      const isPullingDown = currentY - touchStartY > 0;
+
+      if (isPullingDown) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+
+    const guardBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "Close this tab and tap again instead of refreshing.";
+    };
+
+    window.addEventListener("beforeunload", guardBeforeUnload);
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
+
+    return () => {
+      window.removeEventListener("beforeunload", guardBeforeUnload);
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50">
       <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-6 px-4 py-10">
         <header className="space-y-2 text-center">
-          <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">
-            Better Prompt
-          </p>
           <h1 className="text-3xl font-semibold text-zinc-100">OopsLock</h1>
           <p
             className="text-sm text-zinc-400 mx-10
@@ -141,22 +201,6 @@ export default function Tap() {
         </header>
 
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-2xl shadow-black/40">
-          <div className="mb-4 flex items-center justify-between text-sm">
-            <span className="text-zinc-400">Status</span>
-            <span
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                phase === "success"
-                  ? "bg-emerald-500/20 text-emerald-300"
-                  : phase === "processing"
-                    ? "bg-blue-500/20 text-blue-200"
-                    : phase === "auth"
-                      ? "bg-amber-500/20 text-amber-200"
-                      : "bg-zinc-700/60 text-zinc-200"
-              }`}
-            >
-              {phase.toUpperCase()}
-            </span>
-          </div>
           {error ? (
             <p className="mt-2 text-center font-bold text-2xl text-red-500">
               {error}
@@ -166,21 +210,24 @@ export default function Tap() {
               {parsedStatusMessage}
             </p>
           )}
-          <div className="mt-6 flex justify-center mr-10">
-            {result?.status === "pending_cleared" ? (
-              <img
-                src="../../assets/img/good.svg"
-                alt="Success"
-                className="h-50 w-50"
-              />
-            ) : (
-              <img
-                src="../../assets/img/bad.svg"
-                alt="Error"
-                className="h-50 w-50"
-              />
-            )}
+          <div className="mt-6 mr-10 flex justify-center">
+            <img
+              src={statusImage.src}
+              alt={statusImage.alt}
+              className="h-50 w-50"
+            />
           </div>
+          {isFirstLink && (
+            <div className="mt-6 flex items-center gap-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-amber-100">
+              <div className="text-left text-sm leading-relaxed">
+                <p className="font-semibold text-amber-50">Card linked</p>
+                <p className="text-amber-200/80">
+                  Close this tab and tap your card again to approve any blocked
+                  prompts. Refreshing this page will not continue the flow.
+                </p>
+              </div>
+            </div>
+          )}
           <div className="mt-6 flex flex-wrap gap-3">
             {phase === "auth" && (
               <>
