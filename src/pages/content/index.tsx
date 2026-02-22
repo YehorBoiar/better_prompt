@@ -3,13 +3,15 @@ import { backendBaseUrl } from "@src/lib/backend";
 
 const BLOCK_THRESHOLD = 69;
 
-let isBackendBlocked = false; // Synchronous state for the interceptor
+let isBackendBlocked = true;
 
 const startBlockPolling = () => {
   setInterval(() => {
     chrome.storage.local.get(["session_token"], async (result) => {
       const token = result.session_token;
-      if (!token) return; // Not logged in yet
+      if (!token) throw new Error("NO TOKEN");
+
+      console.log(isBackendBlocked);
 
       try {
         const response = await fetch(`${backendBaseUrl}/block`, {
