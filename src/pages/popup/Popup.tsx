@@ -9,7 +9,7 @@ import {
   RadialBarChart,
 } from "recharts";
 import { useEffect, useState } from "react";
-import { Info } from "lucide-react";
+import { Info, Lock } from "lucide-react";
 
 const getScoreColor = (score: number) => {
   if (score < 30) return "#22c55e";
@@ -19,23 +19,40 @@ const getScoreColor = (score: number) => {
 
 export default function Popup() {
   const [score, setScore] = useState(0);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+
+  // 1. Check Auth State on Mount
+  useEffect(() => {
+    chrome.storage.local.get(["session_token"], (result) => {
+      setIsLoggedIn(!!result.session_token);
+    });
+  }, []);
+
+  // 2. Only fetch score if logged in
+  useEffect(() => {
+    if (isLoggedIn) {
+      chrome.runtime.sendMessage({ type: "GET_SCORE" }, (response) => {
+        if (typeof response === "number") {
+          setScore(response);
+        }
+      });
+    }
+  }, [isLoggedIn]);
 
   const showDetailsOnPage = () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]?.id) {
         chrome.tabs.sendMessage(tabs[0].id, { type: "SHOW_DETAILS_OVERLAY" });
-        window.close(); // Closes the popup so the user sees the main screen
+        window.close();
       }
     });
   };
 
-  useEffect(() => {
-    chrome.runtime.sendMessage({ type: "GET_SCORE" }, (response) => {
-      if (typeof response === "number") {
-        setScore(response);
-      }
+  const handleLogout = () => {
+    chrome.storage.local.remove("session_token", () => {
+      setIsLoggedIn(false);
     });
-  }, []);
+  };
 
   const openLoginPage = () => {
     if (chrome.runtime.openOptionsPage) {
@@ -53,6 +70,33 @@ export default function Popup() {
     value: { label: "Risk Score" },
   } satisfies ChartConfig;
 
+  // Render nothing while checking storage to prevent UI flicker
+  if (isLoggedIn === null) return null;
+
+  // --- LOGGED OUT VIEW ---
+  if (!isLoggedIn) {
+    return (
+      <div className="flex h-[350px] w-[320px] flex-col items-center justify-center bg-zinc-950 px-6 text-center text-zinc-50">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-zinc-900">
+          <Lock className="h-8 w-8 text-zinc-500" />
+        </div>
+        <h2 className="mb-2 text-lg font-semibold tracking-tight text-zinc-100">
+          Authentication Required
+        </h2>
+        <p className="mb-8 text-sm text-zinc-400">
+          You have to log in before using the extension to evaluate prompts.
+        </p>
+        <Button
+          onClick={openLoginPage}
+          className="w-full bg-zinc-100 text-zinc-950 hover:bg-zinc-200"
+        >
+          Log in
+        </Button>
+      </div>
+    );
+  }
+
+  // --- LOGGED IN VIEW ---
   return (
     <div className="flex w-[320px] flex-col items-center justify-center bg-zinc-950 text-zinc-50">
       <div className="mb-2 mt-5 w-full text-center">
@@ -134,11 +178,11 @@ export default function Popup() {
           <Info className="mr-2 h-4 w-4" /> Details
         </Button>
         <Button
-          onClick={openLoginPage}
+          onClick={handleLogout}
           variant="outline"
-          className="border-zinc-800 bg-zinc-900 text-zinc-100 hover:bg-zinc-800 hover:text-white"
+          className="border-zinc-800 bg-zinc-900 text-zinc-100 hover:bg-zinc-800 hover:text-white border-red-900 hover:bg-red-900"
         >
-          Login
+          Logout
         </Button>
       </div>
     </div>

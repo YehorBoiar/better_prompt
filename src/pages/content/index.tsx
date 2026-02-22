@@ -3,7 +3,7 @@ import { backendBaseUrl } from "@src/lib/backend";
 
 const BLOCK_THRESHOLD = 69;
 
-let isBackendBlocked = true;
+let isBackendBlocked = false; // false by default. we shouldn't block unless the guy is logged in
 
 if (
   window.location.hostname === "localhost" ||
