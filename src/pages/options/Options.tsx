@@ -82,14 +82,13 @@ export default function LoginPage() {
       // 1. Store token for Web (iPhone)
       localStorage.setItem("session_token", data.session_token);
 
-      // 2. Store token for Chrome Extension (if applicable)
-      if (typeof chrome !== "undefined" && chrome.storage) {
-        await chrome.storage.local.set({ session_token: data.session_token });
-      }
+      window.postMessage(
+        { type: "SYNC_TOKEN", token: data.session_token },
+        "*"
+      );
 
       alert(data.is_new_user ? "Account created!" : "Logged in!");
 
-      // Redirect or update UI state here
       redirectToPendingTap();
     } catch (err: any) {
       alert(err.message);
@@ -140,7 +139,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-zinc-100 text-zinc-950 hover:bg-zinc-200 sm:bg-zinc-950 sm:text-zinc-100 sm:hover:bg-zinc-950"
+              className="w-full bg-zinc-100 text-zinc-950 hover:bg-zinc-200 sm:bg-zinc-100 sm:text-zinc-950 sm:hover:bg-zinc-950 sm:hover:text-zinc-100"
             >
               {isLoading ? "Processing..." : "Login"}
             </Button>
