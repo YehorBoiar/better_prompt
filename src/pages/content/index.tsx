@@ -65,18 +65,36 @@ const initInterceptor = () => {
         const token = result.session_token;
         if (!token) return;
 
+        console.log("🚀 Firing POST /block request to backend...");
+
         try {
-          await fetch(`${backendBaseUrl}/block`, {
+          const response = await fetch(`${backendBaseUrl}/block`, {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${token}`,
+              // Matching your exact curl command:
+              Authorization: token as string,
               "ngrok-skip-browser-warning": "true",
             },
+            // Forcing an empty body ensures the browser sends the right POST headers
+            body: "",
           });
-          console.log("🔒 Backend notified: User is now blocked.");
-          isBackendBlocked = true; // Optimistically update local state
+
+          if (response.ok) {
+            console.log(
+              "🔒 Backend successfully notified: User is now blocked."
+            );
+            isBackendBlocked = true; // Optimistically update local state
+          } else {
+            console.error(
+              "❌ Backend rejected the block request. Status:",
+              response.status
+            );
+          }
         } catch (error) {
-          console.error("Failed to notify backend of block:", error);
+          console.error(
+            "❌ Failed to notify backend of block (CORS or Network error?):",
+            error
+          );
         }
       });
 
