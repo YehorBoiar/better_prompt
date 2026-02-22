@@ -79,12 +79,12 @@ export default function LoginPage() {
       const data = await response.json();
       console.log("Success:", data);
 
-      // 1. Store token for Web (iPhone)
+      // store token for Web (iPhone)
       localStorage.setItem("session_token", data.session_token);
 
       window.postMessage(
         { type: "SYNC_TOKEN", token: data.session_token },
-        "*"
+        "*",
       );
 
       alert(data.is_new_user ? "Account created!" : "Logged in!");

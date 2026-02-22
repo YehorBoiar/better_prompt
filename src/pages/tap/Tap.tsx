@@ -61,7 +61,7 @@ export default function Tap() {
       const response = await fetch(tapUrl.toString(), {
         method: "GET",
         headers: {
-          Authorisation: token,
+          Authorization: `Bearer ${token}`,
           "ngrok-skip-browser-warning": "true",
         },
       });
