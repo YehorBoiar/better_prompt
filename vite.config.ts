@@ -19,6 +19,7 @@ export default defineConfig({
       "localhost",
       "nonreflected-triatomically-tony.ngrok-free.dev",
       "brynlee-indiscretionary-unforgetfully.ngrok-free.dev",
+      "6a45-138-195-55-205.ngrok-free.app",
     ],
   },
 });
