@@ -3,34 +3,19 @@ import { backendBaseUrl } from "@src/lib/backend";
 
 const BLOCK_THRESHOLD = 69;
 
-let isBackendBlocked = true;
-
-if (
-  window.location.hostname === "localhost" ||
-  window.location.hostname === "127.0.0.1"
-) {
-  const localToken = localStorage.getItem("session_token");
-  if (localToken) {
-    chrome.storage.local.set({ session_token: localToken }, () => {
-      console.log("🔗 Extension successfully synced token from Web App!");
-    });
-  }
-}
+let isBackendBlocked = false;
+let justTapped = false;
 
 const startBlockPolling = () => {
   setInterval(() => {
     chrome.storage.local.get(["session_token"], async (result) => {
       const token = result.session_token;
-      if (!token) throw new Error("NO TOKEN");
-      console.log(token);
-
-      console.log(isBackendBlocked);
+      if (!token) return; // Just return silently instead of throwing errors when logged out
 
       try {
         const response = await fetch(`${backendBaseUrl}/blocked`, {
           method: "GET",
           headers: {
-            // Adjust header depending on how your FastAPI require_session expects the token
             Authorization: `Bearer ${token}`,
             "ngrok-skip-browser-warning": "true",
           },
@@ -38,6 +23,13 @@ const startBlockPolling = () => {
 
         if (response.ok) {
           const data = await response.json();
+
+          // If the backend WAS blocked, but now it's NOT, they successfully tapped!
+          if (isBackendBlocked === true && data.is_blocked === false) {
+            console.log("🔓 NFC Tap detected! Next prompt is unlocked.");
+            justTapped = true;
+          }
+
           isBackendBlocked = data.is_blocked;
         }
       } catch (error) {
@@ -56,9 +48,37 @@ const initInterceptor = () => {
   const checkAndBlock = (e: Event, text: string) => {
     const { score, matches } = evaluator(text);
 
-    if (score > BLOCK_THRESHOLD && isBackendBlocked) {
+    // If the prompt is bad...
+    if (score > BLOCK_THRESHOLD) {
+      // ... check if they just used their NFC card
+      if (justTapped) {
+        console.log("🚀 Sending prompt using NFC override!");
+        justTapped = false; // Consume the bypass so they can't spam bad prompts forever
+        return false; // Let it go through to ChatGPT
+      }
+
       e.stopImmediatePropagation();
       e.preventDefault();
+
+      // Tell the backend to lock them down
+      chrome.storage.local.get(["session_token"], async (result) => {
+        const token = result.session_token;
+        if (!token) return;
+
+        try {
+          await fetch(`${backendBaseUrl}/block`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "ngrok-skip-browser-warning": "true",
+            },
+          });
+          console.log("🔒 Backend notified: User is now blocked.");
+          isBackendBlocked = true; // Optimistically update local state
+        } catch (error) {
+          console.error("Failed to notify backend of block:", error);
+        }
+      });
 
       // Show the simple instructions instead of the full breakdown
       renderBlockModal(score);
@@ -107,7 +127,7 @@ const initObserver = () => {
     if (!input) return;
 
     const runEval = () => {
-      const { score } = evaluator(input.textContent || ""); // UPDATED: Destructuring
+      const { score } = evaluator(input.textContent || "");
       chrome.runtime.sendMessage({ type: "SCORE_UPDATED", payload: score });
     };
 
@@ -135,7 +155,6 @@ initObserver();
  */
 chrome.runtime.onMessage.addListener((request) => {
   if (request.type === "SHOW_DETAILS_OVERLAY") {
-    // UPDATED: Actually evaluate the current text instead of hardcoding
     const input = document.querySelector('[contenteditable="true"]');
     const { score, matches } = evaluator(input?.textContent || "");
     renderDetailsModal(score, matches);
@@ -143,7 +162,6 @@ chrome.runtime.onMessage.addListener((request) => {
 });
 
 function renderDetailsModal(score: number, matches: HeuristicMatch[]) {
-  // UPDATED: Accepts HeuristicMatch array
   if (document.getElementById("security-modal-root")) return;
 
   const root = document.createElement("div");
@@ -151,10 +169,7 @@ function renderDetailsModal(score: number, matches: HeuristicMatch[]) {
 
   const scoreColor =
     score > 60 ? "#ef4444" : score > 30 ? "#f59e0b" : "#22c55e";
-  const statusText =
-    score > 60 ? "CRITICAL RISK" : score > 30 ? "WARNING" : "SAFE";
 
-  // UPDATED: Build beautiful cards for each match
   const reasonsHtml =
     matches.length === 0
       ? `<p style="color: #a1a1aa; font-size: 13px; text-align: center; padding: 10px;">No suspicious patterns identified.</p>`
