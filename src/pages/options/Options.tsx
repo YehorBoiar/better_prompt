@@ -140,7 +140,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-zinc-100 text-zinc-950 hover:bg-zinc-200 sm:bg-zinc-950 sm:text-zinc-100 sm:hover:bg-zinc-950"
+              className="w-full bg-zinc-100 text-zinc-950 hover:bg-zinc-200 sm:bg-zinc-100 sm:text-zinc-950 sm:hover:bg-zinc-950 sm:hover:text-zinc-100"
             >
               {isLoading ? "Processing..." : "Login"}
             </Button>

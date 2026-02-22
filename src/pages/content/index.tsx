@@ -1,6 +1,38 @@
 import evaluator, { HeuristicMatch } from "@src/lib/evaluator";
+import { backendBaseUrl } from "@src/lib/backend";
 
 const BLOCK_THRESHOLD = 69;
+
+let isBackendBlocked = false; // Synchronous state for the interceptor
+
+const startBlockPolling = () => {
+  setInterval(() => {
+    chrome.storage.local.get(["session_token"], async (result) => {
+      const token = result.session_token;
+      if (!token) return; // Not logged in yet
+
+      try {
+        const response = await fetch(`${backendBaseUrl}/block`, {
+          method: "GET",
+          headers: {
+            // Adjust header depending on how your FastAPI require_session expects the token
+            Authorization: `Bearer ${token}`,
+            "ngrok-skip-browser-warning": "true",
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          isBackendBlocked = data.is_blocked;
+        }
+      } catch (error) {
+        console.error("Polling error:", error);
+      }
+    });
+  }, 2000);
+};
+
+startBlockPolling();
 
 /**
  * SILENT INTERCEPTOR
@@ -9,7 +41,7 @@ const initInterceptor = () => {
   const checkAndBlock = (e: Event, text: string) => {
     const { score, matches } = evaluator(text);
 
-    if (score > BLOCK_THRESHOLD) {
+    if (score > BLOCK_THRESHOLD && isBackendBlocked) {
       e.stopImmediatePropagation();
       e.preventDefault();
 
